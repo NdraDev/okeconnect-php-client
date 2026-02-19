@@ -34,13 +34,48 @@ class ParserTest extends TestCase
         $this->assertTrue($response->isSuccessful());
     }
 
-    public function testTransactionFailed(): void
+    public function testTransactionSuccessTokenPln(): void
     {
         $parser = new TransactionParser();
-        $response = $parser->parse('T#41169572 R#1235 Telkomsel 5.000 S5.082280004280 GAGAL. Nomor tujuan salah. Saldo 10.795.667 @22:15');
+        $response = $parser->parse('T#373572205 R#365528 H2H Token PLN 100.000 PLNF100.86024157967 SUKSES. SN: 0143 4804 9579 5519 9674/MEGA AMBOINANTO/R1/1300 VA/63,0KWH/PLNREF:1TKT21R3741822360221/IDPEL:181800619334/RPTOKEN:90.909,00/PPN:0,00/PPJ:9.091,00/MATERAI:0,00. Saldo 2.304.523 - 100.020 = 2.204.503 @05/02 20:59');
 
-        $this->assertEquals('41169572', $response->transactionId);
-        $this->assertEquals('Nomor tujuan salah', $response->failureReason);
+        $this->assertEquals('373572205', $response->transactionId);
+        $this->assertEquals('365528', $response->refId);
+        $this->assertEquals('H2H Token PLN', $response->provider);
+        $this->assertEquals('100.000', $response->nominal);
+        $this->assertStringContainsString('0143 4804 9579 5519 9674', $response->serialNumber);
+        $this->assertTrue($response->isSuccessful());
+    }
+
+    public function testTransactionFailedCheckNumber(): void
+    {
+        $parser = new TransactionParser();
+        $response = $parser->parse('T#373620355 R#604528 Three 15.000 T15.089620308676 GAGAL. Mohon diperiksa kembali No tujuan sebelum di ulang. Saldo 1.352.242 @22:20');
+
+        $this->assertEquals('373620355', $response->transactionId);
+        $this->assertEquals('604528', $response->refId);
+        $this->assertStringContainsString('Mohon diperiksa kembali No tujuan sebelum di ulang', $response->failureReason);
+        $this->assertTrue($response->isFailed());
+    }
+
+    public function testTransactionFailedUnreg(): void
+    {
+        $parser = new TransactionParser();
+        $response = $parser->parse('T#373620702 R#2500368 Freedom Mini 2,5GB 5 Hari IFM25N5.085731717006 GAGAL. Ket:Unreg Dahulu Paket Lama. Saldo 27.917.398 @22:21');
+
+        $this->assertEquals('373620702', $response->transactionId);
+        $this->assertEquals('2500368', $response->refId);
+        $this->assertStringContainsString('Unreg Dahulu Paket Lama', $response->failureReason);
+        $this->assertTrue($response->isFailed());
+    }
+
+    public function testTransactionFailedCekKembali(): void
+    {
+        $parser = new TransactionParser();
+        $response = $parser->parse('T#373620355 R#604528 Three 15.000 T15.089620308676 GAGAL. Cek kembali nomor tujuan Anda.. Saldo 1.352.242 @22:20');
+
+        $this->assertEquals('373620355', $response->transactionId);
+        $this->assertStringContainsString('Cek kembali nomor tujuan Anda', $response->failureReason);
         $this->assertTrue($response->isFailed());
     }
 
@@ -99,6 +134,19 @@ class ParserTest extends TestCase
         $this->assertTrue($response->isSuccessful());
     }
 
+    public function testWebhookSuccessTokenPln(): void
+    {
+        $parser = new WebhookParser();
+        $response = $parser->parse('T#373572205 R#365528 H2H Token PLN 100.000 PLNF100.86024157967 SUKSES. SN: 0143 4804 9579 5519 9674/MEGA AMBOINANTO/R1/1300 VA/63,0KWH/PLNREF:1TKT21R3741822360221/IDPEL:181800619334. Saldo 2.304.523 - 100.020 = 2.204.503 @05/02 20:59');
+
+        $this->assertEquals('373572205', $response->transactionId);
+        $this->assertEquals('365528', $response->refId);
+        $this->assertStringContainsString('0143 4804 9579 5519 9674', $response->serialNumber);
+        $this->assertEquals('05/02', $response->date);
+        $this->assertEquals('20:59', $response->time);
+        $this->assertTrue($response->isSuccessful());
+    }
+
     public function testWebhookFailed(): void
     {
         $parser = new WebhookParser();
@@ -107,6 +155,17 @@ class ParserTest extends TestCase
         $this->assertEquals('41169572', $response->transactionId);
         $this->assertEquals('1235', $response->refId);
         $this->assertEquals('Nomor tujuan salah', $response->failureReason);
+        $this->assertTrue($response->isFailed());
+    }
+
+    public function testWebhookFailedUnreg(): void
+    {
+        $parser = new WebhookParser();
+        $response = $parser->parse('T#373620702 R#2500368 Freedom Mini 2,5GB 5 Hari IFM25N5.085731717006 GAGAL. Ket:Unreg Dahulu Paket Lama. Saldo 27.917.398 @22:21');
+
+        $this->assertEquals('373620702', $response->transactionId);
+        $this->assertEquals('2500368', $response->refId);
+        $this->assertStringContainsString('Unreg Dahulu Paket Lama', $response->failureReason);
         $this->assertTrue($response->isFailed());
     }
 

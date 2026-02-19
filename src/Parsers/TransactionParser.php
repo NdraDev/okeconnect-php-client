@@ -18,7 +18,7 @@ class TransactionParser
             return $model;
         }
 
-        if (stripos($response, 'SUKSES') !== false) {
+        if (stripos($response, 'SUKSES') !== false || stripos($response, 'SUKSES.') !== false) {
             $model->success = true;
             $model->status = 'SUCCESS';
             $this->parseSuccess($response, $model);
@@ -99,6 +99,11 @@ class TransactionParser
             $model->provider = trim($matches[1]);
             $model->nominal = $matches[2];
         }
+
+        if (preg_match('/R#(?:\d+)\s+(H2H\s+[A-Za-z\s]+)\s+([\d\.]+)/', $response, $matches)) {
+            $model->provider = trim($matches[1]);
+            $model->nominal = $matches[2];
+        }
     }
 
     private function extractOpenDenomInfo(string $response, TransactionResponse $model): void
@@ -114,7 +119,7 @@ class TransactionParser
 
     private function extractBalanceInfo(string $response, TransactionResponse $model): void
     {
-        if (preg_match('/Saldo\s+([\d\.]+)\s*-\s*([\d\.]+)\s*=\s*([\d\.]+)/', $response, $matches)) {
+        if (preg_match('/Saldo\s+([\d\.]+)\s*[–-]\s*([\d\.]+)\s*=\s*([\d\.]+)/', $response, $matches)) {
             $model->balanceBefore = (float) str_replace('.', '', $matches[1]);
             $model->price = (float) str_replace('.', '', $matches[2]);
             $model->balanceAfter = (float) str_replace('.', '', $matches[3]);
@@ -130,21 +135,31 @@ class TransactionParser
 
     private function extractTime(string $response, TransactionResponse $model): void
     {
-        if (preg_match('/@(\d{1,2}:\d{2})/', $response, $matches)) {
+        if (preg_match('/@(\d{2}\/\d{2}\s+\d{1,2}:\d{2})/', $response, $matches)) {
+            $model->time = $matches[1];
+        } elseif (preg_match('/@(\d{1,2}:\d{2})/', $response, $matches)) {
             $model->time = $matches[1];
         }
     }
 
     private function extractSerialNumber(string $response, TransactionResponse $model): void
     {
-        if (preg_match('/SN:\s*([A-Z0-9\.]+)/i', $response, $matches)) {
+        if (preg_match('/SN:\s*([^\n.]+(?:\/[^\n.]+)*)/i', $response, $matches)) {
+            $model->serialNumber = trim($matches[1]);
+        } elseif (preg_match('/SN:\s*([A-Z0-9\.]+)/i', $response, $matches)) {
             $model->serialNumber = $matches[1];
         }
     }
 
     private function extractFailureReason(string $response, TransactionResponse $model): void
     {
-        if (preg_match('/GAGAL\.\s*(.+?)\.\s*Saldo/i', $response, $matches)) {
+        if (preg_match('/GAGAL\.\s*(?:Ket:)?(.+?)\.\s*Saldo/i', $response, $matches)) {
+            $model->failureReason = trim($matches[1]);
+        } elseif (preg_match('/GAGAL\.\s*(?:Ket:)?(.+?)\.\s*Saldo/i', $response, $matches)) {
+            $model->failureReason = trim($matches[1]);
+        } elseif (preg_match('/GAGAL\.\s*(.+?)\.\s*Saldo/i', $response, $matches)) {
+            $model->failureReason = trim($matches[1]);
+        } elseif (preg_match('/GAGAL\.\s*(.+?)\s+Saldo/i', $response, $matches)) {
             $model->failureReason = trim($matches[1]);
         } elseif (preg_match('/GAGAL\.\s*(.+?)$/i', $response, $matches)) {
             $model->failureReason = trim($matches[1]);

@@ -24,14 +24,14 @@ class StatusCheckParser
             return $model;
         }
 
-        if (preg_match('/status\s+Sukses/i', $response)) {
+        if (preg_match('/status\s+Sukses/i', $response) || stripos($response, 'SUKSES') !== false) {
             $model->success = true;
             $model->status = 'SUCCESS';
             $this->parseStatusDetail($response, $model);
             return $model;
         }
 
-        if (preg_match('/status\s+Gagal/i', $response)) {
+        if (preg_match('/status\s+Gagal/i', $response) || stripos($response, 'GAGAL') !== false) {
             $model->success = false;
             $model->status = 'FAILED';
             $this->parseStatusDetail($response, $model);
@@ -116,12 +116,16 @@ class StatusCheckParser
     {
         if (preg_match('/jam\s+(\d{1,2}:\d{2})/', $response, $matches)) {
             $model->transactionTime = $matches[1];
+        } elseif (preg_match('/@(\d{1,2}:\d{2})/', $response, $matches)) {
+            $model->transactionTime = $matches[1];
         }
     }
 
     private function extractSerialNumber(string $response, StatusCheckResponse $model): void
     {
-        if (preg_match('/SN:\s*([A-Z0-9\.]+)/i', $response, $matches)) {
+        if (preg_match('/SN:\s*([^\n.]+(?:\/[^\n.]+)*)/i', $response, $matches)) {
+            $model->serialNumber = trim($matches[1]);
+        } elseif (preg_match('/SN:\s*([A-Z0-9\.]+)/i', $response, $matches)) {
             $model->serialNumber = $matches[1];
         }
     }
@@ -135,7 +139,11 @@ class StatusCheckParser
 
     private function extractFailureReason(string $response, StatusCheckResponse $model): void
     {
-        if (preg_match('/status\s+Gagal\.\s*(.+?)(?:\.|$)/i', $response, $matches)) {
+        if (preg_match('/status\s+Gagal[.\s]+(.+?)\.\s*Saldo/i', $response, $matches)) {
+            $model->failureReason = trim($matches[1]);
+        } elseif (preg_match('/GAGAL[.\s]+(.+?)\.\s*Saldo/i', $response, $matches)) {
+            $model->failureReason = trim($matches[1]);
+        } elseif (preg_match('/GAGAL[.\s]+(.+?)\s+Saldo/i', $response, $matches)) {
             $model->failureReason = trim($matches[1]);
         }
     }
