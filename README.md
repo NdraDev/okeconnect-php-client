@@ -28,156 +28,167 @@ $oke = new OkeConnect(
     pin: '123456',
     password: 'secret'
 );
+
+OkeConnect::setInstance($oke);
+```
+
+### 2. Menggunakan Helper Function
+
+```php
+oke_connect('OK00123', '123456', 'secret');
+
+$response = oke_transaction('T1', '089660522887', 'REF123');
 ```
 
 ---
 
-### 2. Transaksi Pulsa (Fixed Denom)
+### 3. Transaksi Pulsa (Fixed Denom)
 
 ```php
-$response = $oke->transaction('T1', '089660522887', 'TRX123');
+use OkeConnect\OkeConnectException;
 
-echo $response->transactionId;
-echo $response->refId;
-echo $response->provider;
-echo $response->nominal;
-echo $response->productCode;
-echo $response->destination;
-echo $response->balanceBefore;
-echo $response->price;
-echo $response->balanceAfter;
-echo $response->time;
-echo $response->serialNumber;
-
-if ($response->isProcessing()) {
-    echo "Sedang diproses";
-}
-
-if ($response->isSuccessful()) {
-    echo "Berhasil";
-}
-
-if ($response->isFailed()) {
-    echo "Gagal: " . $response->failureReason;
-}
-
-print_r($response->toArray());
-```
-
----
-
-### 3. Transaksi E-Wallet (Open Denom)
-
-```php
-$response = $oke->transactionOpenDenom('BBSDN', '085736044280', 50000, 'EW123');
-
-echo $response->nominal;
-echo $response->transactionId;
-```
-
----
-
-### 4. Cek Status Transaksi
-
-```php
-$status = $oke->checkStatus('T5', '08980204060', 'REF123');
-
-echo $status->refId;
-echo $status->provider;
-echo $status->nominal;
-echo $status->productCode;
-echo $status->destination;
-echo $status->transactionTime;
-echo $status->serialNumber;
-echo $status->price;
-
-if ($status->isSuccessful()) {
-    echo "Transaksi sukses";
-}
-
-if ($status->isFailed()) {
-    echo "Transaksi gagal: " . $status->failureReason;
-}
-
-if ($status->isPending()) {
-    echo "Transaksi pending";
-}
-
-if ($status->isNoData()) {
-    echo "Data tidak ditemukan";
-}
-
-print_r($status->toArray());
-```
-
----
-
-### 5. Parse Webhook Callback
-
-```php
-$callback = $oke->parseWebhook($_GET);
-
-echo $callback->transactionId;
-echo $callback->refId;
-echo $callback->provider;
-echo $callback->nominal;
-echo $callback->productCode;
-echo $callback->destination;
-echo $callback->serialNumber;
-echo $callback->balanceBefore;
-echo $callback->price;
-echo $callback->balanceAfter;
-echo $callback->date;
-echo $callback->time;
-
-if ($callback->isSuccessful()) {
-    echo "Webhook sukses";
-}
-
-if ($callback->isFailed()) {
-    echo "Webhook gagal: " . $callback->failureReason;
-}
-
-print_r($callback->toArray());
-```
-
----
-
-### 6. Price List
-
-```php
-$products = $oke->getPriceList();
-
-foreach ($products as $product) {
-    echo $product->code;
-    echo $product->description;
-    echo $product->product;
-    echo $product->category;
-    echo $product->getFormattedPrice();
+try {
+    $response = $oke->transaction('T1', '089660522887', 'TRX123');
     
-    if ($product->isAvailable()) {
-        echo "Tersedia";
+    echo $response->transactionId;
+    echo $response->refId;
+    echo $response->provider;
+    echo $response->nominal;
+    echo $response->destination;
+    
+    if ($response->isSuccessful()) {
+        echo "Berhasil";
+        echo $response->serialNumber;
+    }
+    
+    if ($response->isFailed()) {
+        echo "Gagal: " . $response->failureReason;
+    }
+    
+    if ($response->balanceBefore !== null) {
+        echo "Saldo Sebelum: " . $response->balanceBefore;
+        echo "Harga: " . $response->price;
+        echo "Saldo Setelah: " . $response->balanceAfter;
+    }
+    
+} catch (OkeConnectException $e) {
+    echo "Error: " . $e->getUserMessage();
+}
+```
+
+---
+
+### 4. Transaksi E-Wallet (Open Denom)
+
+```php
+try {
+    $response = $oke->transactionOpenDenom('BBSDN', '085736044280', 50000, 'EW123');
+    
+    echo $response->nominal;
+    echo $response->transactionId;
+    
+} catch (OkeConnectException $e) {
+    if ($e->getCode() === OkeConnectException::INVALID_PARAMETER) {
+        echo "Nominal harus antara 10.000 - 10.000.000";
     }
 }
-
-$produk = $oke->findProductByCode('SMDC150');
-if ($produk) {
-    echo $produk->description;
-    echo "Rp " . number_format($produk->price, 0, ',', '.');
-}
-
-$harga = $oke->getPrice('SMDC150');
-
-$available = $oke->getAvailableProducts();
-
-$byCategory = $oke->getPriceListByCategory('SMARTFREN');
-
-$byProduct = $oke->getPriceListByProduct('Data Smart Combo');
 ```
 
 ---
 
-### 7. Helper Functions
+### 5. Cek Status Transaksi
+
+```php
+try {
+    $status = $oke->checkStatus('T5', '08980204060', 'REF123');
+    
+    echo $status->getStatusText();
+    
+    if ($status->isSuccessful()) {
+        echo $status->serialNumber;
+        echo $status->price;
+    }
+    
+    if ($status->isFailed()) {
+        echo $status->failureReason;
+    }
+    
+    if ($status->isPending()) {
+        echo "Transaksi masih pending";
+    }
+    
+    if ($status->isNoData()) {
+        echo "Data tidak ditemukan";
+    }
+    
+} catch (OkeConnectException $e) {
+    echo "Error: " . $e->getUserMessage();
+}
+```
+
+---
+
+### 6. Parse Webhook Callback
+
+```php
+try {
+    $callback = $oke->parseWebhook($_GET);
+    
+    echo $callback->transactionId;
+    echo $callback->refId;
+    echo $callback->getStatusText();
+    
+    if ($callback->isSuccessful()) {
+        echo $callback->serialNumber;
+        echo $callback->date;
+        echo $callback->time;
+    }
+    
+    if ($callback->isFailed()) {
+        echo $callback->failureReason;
+    }
+    
+} catch (OkeConnectException $e) {
+    echo "Error: " . $e->getUserMessage();
+}
+```
+
+---
+
+### 7. Price List
+
+```php
+try {
+    $products = $oke->getPriceList();
+    
+    foreach ($products as $product) {
+        echo $product->code;
+        echo $product->description;
+        echo $product->getFormattedPrice();
+        
+        if ($product->isAvailable()) {
+            echo "Tersedia";
+        }
+    }
+    
+    $produk = $oke->findProductByCode('SMDC150');
+    if ($produk) {
+        echo $produk->description;
+        echo $produk->getFormattedPrice();
+    }
+    
+    $harga = $oke->getPrice('SMDC150');
+    
+    $available = $oke->getAvailableProducts();
+    
+} catch (OkeConnectException $e) {
+    echo "Error: " . $e->getUserMessage();
+}
+```
+
+---
+
+### 8. Helper Functions
 
 ```php
 $response = oke_transaction('T1', '089660522887', 'REF123');
@@ -199,29 +210,99 @@ $price = oke_price('SMDC150');
 require_once 'vendor/autoload.php';
 
 use OkeConnect\OkeConnect;
+use OkeConnect\OkeConnectException;
 
 header('Content-Type: application/json');
 
-$oke = new OkeConnect('OK00123', '123456', 'secret');
-$callback = $oke->parseWebhook($_GET);
-
-if ($callback->isSuccessful()) {
-    echo json_encode([
-        'success' => true,
-        'ref_id' => $callback->refId,
-        'transaction_id' => $callback->transactionId,
-        'serial_number' => $callback->serialNumber,
-    ]);
+if (empty($_GET['message'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing message parameter']);
+    exit;
 }
 
-if ($callback->isFailed()) {
+try {
+    $oke = new OkeConnect('OK00123', '123456', 'secret');
+    $callback = $oke->parseWebhook($_GET);
+
+    if ($callback->isSuccessful()) {
+        echo json_encode([
+            'success' => true,
+            'ref_id' => $callback->refId,
+            'transaction_id' => $callback->transactionId,
+            'serial_number' => $callback->serialNumber,
+        ]);
+    }
+    
+    if ($callback->isFailed()) {
+        echo json_encode([
+            'success' => false,
+            'ref_id' => $callback->refId,
+            'failure_reason' => $callback->failureReason,
+        ]);
+    }
+
+} catch (OkeConnectException $e) {
+    http_response_code(400);
     echo json_encode([
         'success' => false,
-        'ref_id' => $callback->refId,
-        'failure_reason' => $callback->failureReason,
+        'error' => $e->getUserMessage(),
     ]);
 }
 ```
+
+---
+
+## Exception Handling
+
+### OkeConnectException Codes
+
+| Code | Constant | Keterangan |
+|------|----------|------------|
+| 1001 | MISSING_CREDENTIALS | Kredensial tidak lengkap |
+| 1002 | INVALID_PARAMETER | Parameter tidak valid |
+| 1003 | REQUEST_FAILED | Gagal connect ke server |
+| 1004 | PARSE_ERROR | Gagal parse response |
+| 1005 | TRANSACTION_FAILED | Transaksi gagal |
+| 1006 | INSUFFICIENT_BALANCE | Saldo tidak cukup |
+| 1007 | PRODUCT_NOT_FOUND | Produk tidak ditemukan |
+
+### Cara Menggunakan Exception
+
+```php
+try {
+    $response = $oke->transaction('T1', '089660522887', 'REF123');
+    
+} catch (OkeConnectException $e) {
+    echo $e->getCode();
+    echo $e->getUserMessage();
+    echo $e->getMessage();
+    print_r($e->getContext());
+    
+    if ($e->isCredentialError()) {
+        echo "Periksa kredensial Anda";
+    }
+    
+    if ($e->isTransactionError()) {
+        echo "Transaksi gagal";
+    }
+}
+```
+
+---
+
+## Validation
+
+### Ref ID Validation
+- Tidak boleh kosong
+- Maksimal 50 karakter
+
+### Phone Number Validation
+- Tidak boleh kosong
+- Harus 10-15 digit angka
+
+### Qty Validation (Open Denom)
+- Minimal 10.000
+- Maksimal 10.000.000
 
 ---
 
@@ -233,17 +314,17 @@ if ($callback->isFailed()) {
 |----------|------|------------|
 | transactionId | string|null | ID Transaksi |
 | refId | string|null | ID Referensi |
-| provider | string|null | Provider (Three, Telkomsel, dll) |
-| nominal | string|null | Nominal transaksi |
-| productCode | string|null | Kode produk |
-| destination | string|null | Nomor tujuan |
-| status | string|null | Status (SUCCESS/FAILED/PROCESSING) |
-| balanceBefore | float|null | Saldo sebelum |
-| price | float|null | Harga transaksi |
-| balanceAfter | float|null | Saldo setelah |
-| time | string|null | Waktu transaksi |
-| serialNumber | string|null | Serial number (jika sukses) |
-| failureReason | string|null | Alasan gagal (jika gagal) |
+| provider | string|null | Provider |
+| nominal | string|null | Nominal |
+| productCode | string|null | Kode Produk |
+| destination | string|null | Nomor Tujuan |
+| status | string|null | Status |
+| balanceBefore | float|null | Saldo Sebelum |
+| price | float|null | Harga |
+| balanceAfter | float|null | Saldo Setelah |
+| time | string|null | Waktu |
+| serialNumber | string|null | Serial Number |
+| failureReason | string|null | Alasan Gagal |
 
 **Methods:**
 - `isProcessing()` - Cek apakah sedang diproses
@@ -262,13 +343,13 @@ if ($callback->isFailed()) {
 | refId | string|null | ID Referensi |
 | provider | string|null | Provider |
 | nominal | string|null | Nominal |
-| productCode | string|null | Kode produk |
-| destination | string|null | Nomor tujuan |
-| transactionTime | string|null | Waktu transaksi |
+| productCode | string|null | Kode Produk |
+| destination | string|null | Nomor Tujuan |
+| transactionTime | string|null | Waktu Transaksi |
 | status | string|null | Status |
-| serialNumber | string|null | Serial number |
+| serialNumber | string|null | Serial Number |
 | price | float|null | Harga |
-| failureReason | string|null | Alasan gagal |
+| failureReason | string|null | Alasan Gagal |
 | transactionId | string|null | ID Transaksi |
 
 **Methods:**
@@ -290,22 +371,22 @@ if ($callback->isFailed()) {
 | refId | string|null | ID Referensi |
 | provider | string|null | Provider |
 | nominal | string|null | Nominal |
-| productCode | string|null | Kode produk |
-| destination | string|null | Nomor tujuan |
+| productCode | string|null | Kode Produk |
+| destination | string|null | Nomor Tujuan |
 | status | string|null | Status |
-| serialNumber | string|null | Serial number |
-| balanceBefore | float|null | Saldo sebelum |
+| serialNumber | string|null | Serial Number |
+| balanceBefore | float|null | Saldo Sebelum |
 | price | float|null | Harga |
-| balanceAfter | float|null | Saldo setelah |
+| balanceAfter | float|null | Saldo Setelah |
 | date | string|null | Tanggal |
 | time | string|null | Waktu |
-| failureReason | string|null | Alasan gagal |
+| failureReason | string|null | Alasan Gagal |
 
 **Methods:**
 - `isSuccessful()` - Cek apakah sukses
 - `isFailed()` - Cek apakah gagal
 - `getStatusText()` - Dapatkan teks status
-- `getFullDateTime()` - Dapatkan tanggal + waktu lengkap
+- `getFullDateTime()` - Dapatkan tanggal + waktu
 - `toArray()` - Convert ke array
 - `toJson()` - Convert ke JSON
 
@@ -315,9 +396,9 @@ if ($callback->isFailed()) {
 
 | Property | Tipe | Keterangan |
 |----------|------|------------|
-| code | string | Kode produk |
-| description | string | Deskripsi produk |
-| product | string | Nama produk |
+| code | string | Kode Produk |
+| description | string | Deskripsi |
+| product | string | Nama Produk |
 | category | string | Kategori |
 | price | float | Harga |
 | status | string | Status (1=tersedia) |
@@ -342,15 +423,7 @@ vendor/bin/phpunit
 
 ## Changelog
 
-### Version 1.0.1
-- Support Token PLN dengan SN panjang
-- Support berbagai format failure reason
-- Support format tanggal lengkap (DD/MM HH:mm)
-- Perbaikan parsing balance dengan separator en-dash
-
-### Version 1.0.0
-- Initial release
-- Parsing lengkap untuk transaksi, status check, webhook, dan price list
+Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 
 ---
 

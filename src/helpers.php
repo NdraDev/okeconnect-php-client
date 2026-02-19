@@ -1,5 +1,14 @@
 <?php
 
+if (!function_exists('oke_connect')) {
+    function oke_connect(string $memberId, string $pin, string $password, string $priceListId = '905ccd028329b0a'): \OkeConnect\OkeConnect
+    {
+        $instance = new \OkeConnect\OkeConnect($memberId, $pin, $password, $priceListId);
+        \OkeConnect\OkeConnect::setInstance($instance);
+        return $instance;
+    }
+}
+
 if (!function_exists('oke_transaction')) {
     function oke_transaction(string $product, string $destination, string $refId): \OkeConnect\Models\TransactionResponse
     {

@@ -3,6 +3,8 @@
 namespace OkeConnect;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use OkeConnect\Parsers\TransactionParser;
 use OkeConnect\Parsers\StatusCheckParser;
 use OkeConnect\Parsers\WebhookParser;
@@ -17,6 +19,7 @@ class OkeConnect
     private const BASE_URL = 'https://h2h.okeconnect.com';
     private const PRICE_URL = 'https://okeconnect.com/harga/json';
 
+    private static ?OkeConnect $instance = null;
     private Client $http;
     private string $memberId;
     private string $pin;
@@ -33,6 +36,8 @@ class OkeConnect
 
     public function __construct(string $memberId, string $pin, string $password, string $priceListId = '905ccd028329b0a')
     {
+        $this->validateCredentials($memberId, $pin, $password);
+
         $this->memberId = $memberId;
         $this->pin = $pin;
         $this->password = $password;
@@ -42,6 +47,7 @@ class OkeConnect
             'base_uri' => self::BASE_URL,
             'timeout' => 30,
             'connect_timeout' => 10,
+            'http_errors' => false,
         ]);
 
         $this->transactionParser = new TransactionParser();
@@ -50,46 +56,134 @@ class OkeConnect
         $this->priceListParser = new PriceListParser();
     }
 
+    public static function getInstance(): OkeConnect
+    {
+        if (self::$instance === null) {
+            throw new OkeConnectException(
+                'Instance belum diinisialisasi. Gunakan new OkeConnect() atau setInstance()',
+                OkeConnectException::MISSING_CREDENTIALS
+            );
+        }
+        return self::$instance;
+    }
+
+    public static function setInstance(OkeConnect $instance): void
+    {
+        self::$instance = $instance;
+    }
+
+    public static function transaction(string $product, string $destination, string $refId): TransactionResponse
+    {
+        return self::getInstance()->transaction($product, $destination, $refId);
+    }
+
+    public static function transactionOpenDenom(string $product, string $destination, int $qty, string $refId): TransactionResponse
+    {
+        return self::getInstance()->transactionOpenDenom($product, $destination, $qty, $refId);
+    }
+
+    public static function checkStatus(string $product, string $destination, string $refId, ?int $qty = null): StatusCheckResponse
+    {
+        return self::getInstance()->checkStatus($product, $destination, $refId, $qty);
+    }
+
+    public static function parseWebhook(array $query): WebhookCallback
+    {
+        return self::getInstance()->parseWebhook($query);
+    }
+
+    public static function parseWebhookMessage(string $message): WebhookCallback
+    {
+        return self::getInstance()->parseWebhookMessage($message);
+    }
+
+    public static function getPriceList(): array
+    {
+        return self::getInstance()->getPriceList();
+    }
+
+    public static function getPriceListByCategory(string $category): array
+    {
+        return self::getInstance()->getPriceListByCategory($category);
+    }
+
+    public static function findProductByCode(string $code): ?PriceListItem
+    {
+        return self::getInstance()->findProductByCode($code);
+    }
+
+    public static function getAvailableProducts(): array
+    {
+        return self::getInstance()->getAvailableProducts();
+    }
+
+    public static function getPrice(string $code): ?float
+    {
+        return self::getInstance()->getPrice($code);
+    }
+
     public function transaction(string $product, string $destination, string $refId): TransactionResponse
     {
-        $this->lastRawRequest = http_build_query([
-            'memberID' => $this->memberId,
-            'product' => $product,
-            'dest' => $destination,
-            'refID' => $refId,
-            'pin' => $this->pin,
-            'password' => $this->password,
-        ]);
+        $this->validateRefId($refId);
+        $this->validatePhoneNumber($destination);
 
-        $response = $this->http->get('/trx', [
-            'query' => [
+        try {
+            $response = $this->http->get('/trx', [
+                'query' => [
+                    'memberID' => $this->memberId,
+                    'product' => $product,
+                    'dest' => $destination,
+                    'refID' => $refId,
+                    'pin' => $this->pin,
+                    'password' => $this->password,
+                ]
+            ]);
+
+            $body = (string) $response->getBody();
+            $this->lastRawResponse = $body;
+            $this->lastRawRequest = http_build_query([
                 'memberID' => $this->memberId,
                 'product' => $product,
                 'dest' => $destination,
                 'refID' => $refId,
                 'pin' => $this->pin,
                 'password' => $this->password,
-            ]
-        ]);
+            ]);
 
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->transactionParser->parse($this->lastRawResponse);
+            return $this->transactionParser->parse($body);
+
+        } catch (RequestException $e) {
+            throw new OkeConnectException(
+                'Gagal melakukan transaksi: ' . $e->getMessage(),
+                OkeConnectException::REQUEST_FAILED,
+                $e,
+                ['product' => $product, 'destination' => $destination, 'refId' => $refId]
+            );
+        }
     }
 
     public function transactionOpenDenom(string $product, string $destination, int $qty, string $refId): TransactionResponse
     {
-        $this->lastRawRequest = http_build_query([
-            'memberID' => $this->memberId,
-            'product' => $product,
-            'dest' => $destination,
-            'qty' => $qty,
-            'refID' => $refId,
-            'pin' => $this->pin,
-            'password' => $this->password,
-        ]);
+        $this->validateRefId($refId);
+        $this->validatePhoneNumber($destination);
+        $this->validateQty($qty);
 
-        $response = $this->http->get('/trx', [
-            'query' => [
+        try {
+            $response = $this->http->get('/trx', [
+                'query' => [
+                    'memberID' => $this->memberId,
+                    'product' => $product,
+                    'dest' => $destination,
+                    'qty' => $qty,
+                    'refID' => $refId,
+                    'pin' => $this->pin,
+                    'password' => $this->password,
+                ]
+            ]);
+
+            $body = (string) $response->getBody();
+            $this->lastRawResponse = $body;
+            $this->lastRawRequest = http_build_query([
                 'memberID' => $this->memberId,
                 'product' => $product,
                 'dest' => $destination,
@@ -97,15 +191,25 @@ class OkeConnect
                 'refID' => $refId,
                 'pin' => $this->pin,
                 'password' => $this->password,
-            ]
-        ]);
+            ]);
 
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->transactionParser->parse($this->lastRawResponse);
+            return $this->transactionParser->parse($body);
+
+        } catch (RequestException $e) {
+            throw new OkeConnectException(
+                'Gagal melakukan transaksi: ' . $e->getMessage(),
+                OkeConnectException::REQUEST_FAILED,
+                $e,
+                ['product' => $product, 'destination' => $destination, 'qty' => $qty, 'refId' => $refId]
+            );
+        }
     }
 
     public function checkStatus(string $product, string $destination, string $refId, ?int $qty = null): StatusCheckResponse
     {
+        $this->validateRefId($refId);
+        $this->validatePhoneNumber($destination);
+
         $query = [
             'memberID' => $this->memberId,
             'product' => $product,
@@ -120,81 +224,85 @@ class OkeConnect
             $query['qty'] = $qty;
         }
 
-        $this->lastRawRequest = http_build_query($query);
+        try {
+            $response = $this->http->get('/trx', ['query' => $query]);
+            $body = (string) $response->getBody();
+            $this->lastRawResponse = $body;
+            $this->lastRawRequest = http_build_query($query);
+            return $this->statusCheckParser->parse($body);
 
-        $response = $this->http->get('/trx', ['query' => $query]);
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->statusCheckParser->parse($this->lastRawResponse);
+        } catch (RequestException $e) {
+            throw new OkeConnectException(
+                'Gagal cek status: ' . $e->getMessage(),
+                OkeConnectException::REQUEST_FAILED,
+                $e,
+                ['product' => $product, 'refId' => $refId]
+            );
+        }
     }
 
     public function parseWebhook(array $query): WebhookCallback
     {
+        if (empty($query['message'])) {
+            throw new OkeConnectException(
+                'Parameter message tidak boleh kosong',
+                OkeConnectException::INVALID_PARAMETER,
+                null,
+                ['query' => $query]
+            );
+        }
+
         return $this->webhookParser->parseFromQuery($query);
     }
 
     public function parseWebhookMessage(string $message): WebhookCallback
     {
+        if (empty($message)) {
+            throw new OkeConnectException(
+                'Message tidak boleh kosong',
+                OkeConnectException::INVALID_PARAMETER
+            );
+        }
+
         return $this->webhookParser->parse($message);
     }
 
     public function getPriceList(): array
     {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
+        try {
+            $response = $this->http->get(self::PRICE_URL, [
+                'query' => ['id' => $this->priceListId]
+            ]);
 
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->priceListParser->parse($this->lastRawResponse);
-    }
+            $body = (string) $response->getBody();
+            $this->lastRawResponse = $body;
+            return $this->priceListParser->parse($body);
 
-    public function getPriceListRaw(): string
-    {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
-
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->lastRawResponse;
+        } catch (RequestException $e) {
+            throw new OkeConnectException(
+                'Gagal mengambil price list: ' . $e->getMessage(),
+                OkeConnectException::REQUEST_FAILED,
+                $e
+            );
+        }
     }
 
     public function getPriceListByCategory(string $category): array
     {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
-
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->priceListParser->parseByCategory($this->lastRawResponse, $category);
-    }
-
-    public function getPriceListByProduct(string $productName): array
-    {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
-
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->priceListParser->parseByProduct($this->lastRawResponse, $productName);
+        $items = $this->getPriceList();
+        return $this->priceListParser->parseByCategory(
+            $this->lastRawResponse ?? '',
+            $category
+        );
     }
 
     public function findProductByCode(string $code): ?PriceListItem
     {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
-
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->priceListParser->findByCode($this->lastRawResponse, $code);
-    }
-
-    public function findProductsByCode(array $codes): array
-    {
-        $response = $this->http->get(self::PRICE_URL, [
-            'query' => ['id' => $this->priceListId]
-        ]);
-
-        $this->lastRawResponse = (string) $response->getBody();
-        return $this->priceListParser->findManyByCode($this->lastRawResponse, $codes);
+        $items = $this->getPriceList();
+        return $this->priceListParser->findByCode(
+            $this->lastRawResponse ?? '',
+            $code
+        );
     }
 
     public function getAvailableProducts(): array
@@ -242,5 +350,86 @@ class OkeConnect
     public function getPriceListParser(): PriceListParser
     {
         return $this->priceListParser;
+    }
+
+    private function validateCredentials(string $memberId, string $pin, string $password): void
+    {
+        if (empty($memberId)) {
+            throw new OkeConnectException(
+                'Member ID tidak boleh kosong',
+                OkeConnectException::MISSING_CREDENTIALS
+            );
+        }
+
+        if (empty($pin)) {
+            throw new OkeConnectException(
+                'PIN tidak boleh kosong',
+                OkeConnectException::MISSING_CREDENTIALS
+            );
+        }
+
+        if (empty($password)) {
+            throw new OkeConnectException(
+                'Password tidak boleh kosong',
+                OkeConnectException::MISSING_CREDENTIALS
+            );
+        }
+    }
+
+    private function validateRefId(string $refId): void
+    {
+        if (empty($refId)) {
+            throw new OkeConnectException(
+                'Ref ID tidak boleh kosong',
+                OkeConnectException::INVALID_PARAMETER
+            );
+        }
+
+        if (strlen($refId) > 50) {
+            throw new OkeConnectException(
+                'Ref ID terlalu panjang (max 50 karakter)',
+                OkeConnectException::INVALID_PARAMETER
+            );
+        }
+    }
+
+    private function validatePhoneNumber(string $phone): void
+    {
+        if (empty($phone)) {
+            throw new OkeConnectException(
+                'Nomor telepon tidak boleh kosong',
+                OkeConnectException::INVALID_PARAMETER
+            );
+        }
+
+        if (!preg_match('/^\d{10,15}$/', $phone)) {
+            throw new OkeConnectException(
+                'Format nomor telepon tidak valid (harus 10-15 digit angka)',
+                OkeConnectException::INVALID_PARAMETER,
+                null,
+                ['phone' => $phone]
+            );
+        }
+    }
+
+    private function validateQty(int $qty): void
+    {
+        if ($qty < 10000) {
+            throw new OkeConnectException(
+                'Nominal minimal 10.000',
+                OkeConnectException::INVALID_PARAMETER,
+                null,
+                ['qty' => $qty]
+            );
+        }
+
+        if ($qty > 10000000) {
+            throw new OkeConnectException(
+                'Nominal maksimal 10.000.000',
+                OkeConnectException::INVALID_PARAMETER,
+                null,
+                ['qty' => $qty]
+            );
+        }
     }
 }
