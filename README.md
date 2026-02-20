@@ -18,7 +18,7 @@ composer require ndradev/okeconnect-php-client
 
 ## Daftar Contoh Penggunaan
 
-Tersedia 11 file contoh penggunaan lengkap di folder `examples/`:
+Tersedia 10 file contoh penggunaan lengkap di folder `examples/`:
 
 | File | Deskripsi |
 |------|-----------|
@@ -32,7 +32,6 @@ Tersedia 11 file contoh penggunaan lengkap di folder `examples/`:
 | `08_find_product_by_category.php` | Cari produk berdasarkan kategori |
 | `09_find_product_by_keterangan.php` | Cari produk berdasarkan keterangan |
 | `10_find_product_by_status.php` | Cari produk berdasarkan status |
-| `11_cek_saldo.php` | Cek saldo dari response transaksi |
 | `webhook.php` | Handler webhook untuk callback |
 
 ---
@@ -252,7 +251,6 @@ $callback = oke_webhook($_GET);
 $products = oke_products();
 $product = oke_product('SMDC150');
 $price = oke_price('SMDC150');
-$balance = oke_cek_saldo('T1', '089660522887', 'REF123');
 $product = oke_find_product_by_code('SMDC150');
 $products = oke_find_product_by_category('SMARTFREN');
 $products = oke_find_product_by_keterangan('30GB');

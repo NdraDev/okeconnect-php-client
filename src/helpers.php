@@ -58,14 +58,6 @@ if (!function_exists('oke_price')) {
     }
 }
 
-if (!function_exists('oke_cek_saldo')) {
-    function oke_cek_saldo(string $product, string $destination, string $refId): ?float
-    {
-        $response = \OkeConnect\OkeConnect::transaction($product, $destination, $refId);
-        return $response->balanceBefore;
-    }
-}
-
 if (!function_exists('oke_find_product_by_code')) {
     function oke_find_product_by_code(string $code): ?\OkeConnect\Models\PriceListItem
     {
