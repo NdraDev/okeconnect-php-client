@@ -52,6 +52,7 @@ class TransactionParser
         $this->parseProcessing($response, $model);
         $model->status = 'SUCCESS';
         $this->extractSerialNumber($response, $model);
+        $this->extractPrice($response, $model);
     }
 
     private function parseFailed(string $response, TransactionResponse $model): void
@@ -59,6 +60,7 @@ class TransactionParser
         $this->parseProcessing($response, $model);
         $model->status = 'FAILED';
         $this->extractFailureReason($response, $model);
+        $this->extractPrice($response, $model);
     }
 
     private function parseUnknown(string $response, TransactionResponse $model): void
@@ -121,6 +123,13 @@ class TransactionParser
             $model->time = $matches[1];
         } elseif (preg_match('/@(\d{1,2}:\d{2})/', $response, $matches)) {
             $model->time = $matches[1];
+        }
+    }
+
+    private function extractPrice(string $response, TransactionResponse $model): void
+    {
+        if (preg_match('/Saldo\s+[\d\.]+\s*[–-]\s*([\d\.]+)\s*=\s*[\d\.]+/', $response, $matches)) {
+            $model->price = (float) str_replace('.', '', $matches[1]);
         }
     }
 

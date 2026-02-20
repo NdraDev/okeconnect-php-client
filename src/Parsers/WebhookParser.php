@@ -53,6 +53,7 @@ class WebhookParser
         $this->extractProviderAndNominal($message, $model);
         $this->extractProductCodeAndDestination($message, $model);
         $this->extractSerialNumber($message, $model);
+        $this->extractPrice($message, $model);
         $this->extractDateTime($message, $model);
     }
 
@@ -65,6 +66,7 @@ class WebhookParser
         $this->extractProviderAndNominal($message, $model);
         $this->extractProductCodeAndDestination($message, $model);
         $this->extractFailureReason($message, $model);
+        $this->extractPrice($message, $model);
         $this->extractTime($message, $model);
     }
 
@@ -122,6 +124,13 @@ class WebhookParser
             $model->time = $matches[2];
         } elseif (preg_match('/@(\d{1,2}:\d{2})/', $message, $matches)) {
             $model->time = $matches[1];
+        }
+    }
+
+    private function extractPrice(string $message, WebhookCallback $model): void
+    {
+        if (preg_match('/Saldo\s+[\d\.]+\s*[–-]\s*([\d\.]+)\s*=\s*[\d\.]+/', $message, $matches)) {
+            $model->price = (float) str_replace('.', '', $matches[1]);
         }
     }
 

@@ -13,6 +13,7 @@ class WebhookCallback
     public ?string $status = null;
     public ?string $message = null;
     public ?string $serialNumber = null;
+    public ?float $price = null;
     public ?string $date = null;
     public ?string $time = null;
     public ?string $failureReason = null;
@@ -61,6 +62,7 @@ class WebhookCallback
             'status' => $this->status,
             'status_text' => $this->getStatusText(),
             'serial_number' => $this->serialNumber,
+            'price' => $this->price,
             'date' => $this->date,
             'time' => $this->time,
             'datetime' => $this->getFullDateTime(),

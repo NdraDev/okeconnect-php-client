@@ -370,6 +370,7 @@ try {
 | productCode | string|null | Kode Produk |
 | destination | string|null | Nomor Tujuan |
 | status | string|null | Status |
+| price | float|null | Harga |
 | time | string|null | Waktu |
 | serialNumber | string|null | Serial Number |
 | failureReason | string|null | Alasan Gagal |
@@ -423,6 +424,7 @@ try {
 | destination | string|null | Nomor Tujuan |
 | status | string|null | Status |
 | serialNumber | string|null | Serial Number |
+| price | float|null | Harga |
 | date | string|null | Tanggal |
 | time | string|null | Waktu |
 | failureReason | string|null | Alasan Gagal |
