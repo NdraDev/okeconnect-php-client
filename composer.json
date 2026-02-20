@@ -1,6 +1,7 @@
 {
     "name": "ndradev/okeconnect-php-client",
     "description": "PHP Client untuk OkeConnect H2H API - Parsing lengkap untuk transaksi, webhook, dan price list",
+    "version": "2.0.0",
     "type": "library",
     "license": "MIT",
     "keywords": ["okeconnect", "ppob", "h2h", "pulsa", "api", "php", "indonesia"],

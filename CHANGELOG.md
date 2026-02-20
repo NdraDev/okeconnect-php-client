@@ -2,6 +2,33 @@
 
 Semua perubahan penting pada package ini akan didokumentasikan di file ini.
 
+## [2.0.0] - 2026-02-20
+
+### Added
+- Method `findProductByCategory()` untuk cari produk berdasarkan kategori
+- Method `findProductByKeterangan()` untuk cari produk berdasarkan keterangan
+- Method `findProductByStatus()` untuk filter produk berdasarkan status
+- Helper functions: `oke_find_product_by_code()`, `oke_find_product_by_category()`, `oke_find_product_by_keterangan()`, `oke_find_product_by_status()`
+- 10 example files baru (1 fitur = 1 file)
+- Method `findByCodeFromArray()` di PriceListParser
+
+### Changed
+- Hapus semua comment dari codebase untuk cleaner code
+- Hapus fitur logging (lastRawResponse, lastRawRequest) untuk privasi
+- Update email developer ke cindramicin@gmail.com
+- README.md dengan dokumentasi lengkap Bahasa Indonesia
+- Struktur example files lebih terorganisir
+
+### Removed
+- Hapus fitur cek saldo (oke_cek_saldo)
+- Hapus method `getLastRawResponse()` dan `getLastRawRequest()`
+- Hapus file examples/usage.php lama
+
+### Fixed
+- PriceListParser sekarang bekerja langsung dengan array untuk efisiensi
+
+---
+
 ## [1.0.3] - 2024
 
 ### Added
