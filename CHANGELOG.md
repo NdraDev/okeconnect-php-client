@@ -2,6 +2,23 @@
 
 Semua perubahan penting pada package ini akan didokumentasikan di file ini.
 
+## [4.0.0] - 2026-02-20
+
+### Added
+- Dokumentasi lengkap dengan contoh request dan response untuk setiap fitur
+- Contoh response JSON untuk Price List API
+- Contoh response yang diparsing untuk semua endpoint
+- Detail parameter API untuk setiap endpoint
+- Contoh webhook handler lengkap
+
+### Changed
+- Update README.md dengan dokumentasi komprehensif
+- Tambah contoh format callback webhook
+- Tambah contoh response sukses, gagal, dan pending
+- Upgrade versi ke 4.0.0
+
+---
+
 ## [3.0.0] - 2026-02-20
 
 ### Removed
