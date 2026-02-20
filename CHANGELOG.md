@@ -2,6 +2,22 @@
 
 Semua perubahan penting pada package ini akan didokumentasikan di file ini.
 
+## [3.0.0] - 2026-02-20
+
+### Removed
+- Hapus semua fitur yang berkaitan dengan cek saldo (balanceBefore, balanceAfter)
+- Hapus properti balanceBefore dan balanceAfter dari TransactionResponse
+- Hapus properti balanceBefore dan balanceAfter dari WebhookCallback
+- Hapus method extractBalanceInfo() dan extractBalanceOnFailed() dari semua parser
+- Hapus file examples/11_cek_saldo.php
+- Hapus dokumentasi cek saldo dari README.md
+
+### Changed
+- Upgrade versi ke 3.0.0 (major breaking change)
+- Price tetap diparsing untuk informasi harga transaksi
+
+---
+
 ## [2.0.0] - 2026-02-20
 
 ### Added
