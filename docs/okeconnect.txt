@@ -1,0 +1,90 @@
+# Dokumentasi API H2H OkeConnect
+## Pendahuluan
+OKECONNECT adalah penyedia layanan **H2H Aggregator** yang menyediakan berbagai produk digital (pulsa, data, e-wallet, dll) secara **realtime** dengan harga bersaing. API ini menggunakan metode **HTTP GET** dan berbasis parameter URL.
+list harga:
+GET https://okeconnect.com/harga/json?id=905ccd028329b0a
+contoh response:
+[{"kode":"SMDC150","keterangan":"Smart 30GB All + 60GB (01-05) 30 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"134600","status":"1"},{"kode":"SMDC10","keterangan":"Smart 2GB All + 2GB (01-05) + 2GB Chat 7 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"15050","status":"1"},{"kode":"SMDC20","keterangan":"Smart 2GB All + 3GB (01-05) + 1GB Chat 30 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"31300","status":"1"},{"kode":"SMDC30","keterangan":"Smart 4GB All + 4GB  (01-05) + 2GB Chat 30 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"32250","status":"1"},{"kode":"SMDC60","keterangan":"Smart 10GB + 20GB (01-05) 30 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"67760","status":"1"},{"kode":"SMDC100","keterangan":"Smart 20GB + 40GB (01-05) 30 Hari","produk":"Data Smart Combo","kategori":"KUOTA SMARTFREN","harga":"105450","status":"1"},{"kode":"SMDC9","keterangan":"Smart 3GB All + 5GB
+Base URL:
+https://h2h.okeconnect.com
+## 1. Transaksi Global
+Digunakan untuk melakukan transaksi produk dengan nominal tetap.
+### Endpoint
+GET /trx
+### Contoh Request
+https://h2h.okeconnect.com/trx?product=T1&dest=089660522887&refID=114&memberID=OK00123&pin=123456&password=secret
+### Parameter
+| Parameter | Wajib | Keterangan                               |
+| --------- | ----- | ---------------------------------------- |
+| memberID  | Ya    | Kode user OkeConnect (contoh: OK00123)   |
+| product   | Ya    | Kode produk (contoh: T1, T5, S20, SM20)  |
+| dest      | Ya    | Nomor tujuan transaksi                   |
+| refID     | Ya    | Nomor referensi unik transaksi dari user |
+| pin       | Ya    | PIN transaksi dari OkeConnect            |
+| password  | Ya    | Password transaksi H2H                   |
+### Contoh Response (Sukses)
+T#210286229 R#113 Three 1.000 T1.089660522887 akan diproses. Saldo 279.655 - 1.321 = 278.334 @19:08
+## 2. Transaksi Open Denom (Bebas Nominal)
+Digunakan untuk produk dengan nominal bebas seperti e-wallet.
+### Endpoint
+GET /trx
+### Contoh Request
+https://h2h.okeconnect.com/trx?product=BBSDN&dest=085736044280&qty=12345&refID=7777&memberID=OK00123&pin=123456&password=secret
+### Parameter
+| Parameter | Wajib | Keterangan                                      |
+| --------- | ----- | ----------------------------------------------- |
+| memberID  | Ya    | Kode user                                       |
+| product   | Ya    | Kode produk open denom (contoh: BBSDN)          |
+| dest      | Ya    | Nomor tujuan                                    |
+| qty       | Ya    | Nominal transaksi (min 10.000 â€“ max 10.000.000) |
+| refID     | Ya    | Nomor referensi transaksi                       |
+| pin       | Ya    | PIN transaksi                                   |
+| password  | Ya    | Password transaksi                              |
+### Contoh Response (Sukses)
+T#762261897 R#7777 H2H DANA Topup (Bebas Nominal) BBSDN.085736044280 , QTY : 12345 akan diproses. Saldo 43.928.256 - 12.516 = 43.915.740 @19:14
+## 3. Callback Transaksi
+Callback digunakan untuk menerima status akhir transaksi dari server OkeConnect.
+### Format Callback
+{url_callback}?refid=114&message=ISI_PESAN
+### Parameter Callback
+| Parameter | Keterangan                |
+| --------- | ------------------------- |
+| refid     | Nomor referensi transaksi |
+| message   | Pesan status transaksi    |
+### Contoh Callback Sukses
+T#210288912 R#114 Three 1.000 T1.089660522887 SUKSES. SN: R230512.1911.2100F1. Saldo 278.334 - 1.321 = 277.013 @12/05 19:11
+### Contoh Callback Gagal
+T#41169572 R#1235 Telkomsel 5.000 S5.082280004280 GAGAL. Nomor tujuan salah. Saldo 10.795.667 @22:15
+## 4. Cek Status Transaksi
+Digunakan untuk mengecek status transaksi yang sudah pernah dikirim.
+### Endpoint
+GET /trx
+### Contoh Request
+https://h2h.okeconnect.com/trx?product=T5&dest=08980204060&refID=999&memberID=OK00123&pin=123456&password=secret&check=1
+### Parameter
+| Parameter | Wajib       | Keterangan                       |
+| --------- | ----------- | -------------------------------- |
+| memberID  | Ya          | Kode user                        |
+| product   | Ya          | Kode produk                      |
+| dest      | Ya          | Nomor tujuan                     |
+| refID     | Ya          | Nomor referensi                  |
+| pin       | Ya          | PIN transaksi                    |
+| password  | Ya          | Password transaksi               |
+| check     | Ya          | Isi dengan 1 untuk cek status    |
+| qty       | Kondisional | Wajib untuk transaksi open denom |
+### Contoh Response
+**Sukses**
+R#999 Three 5.000 T5.08980204060 sudah pernah jam 18:46, status Sukses. SN: R25042218462100b7. Hrg 6.487
+**Gagal**
+R#999 Three 5.000 T5.08980204060 sudah pernah jam 18:46, status Gagal. Mohon diperiksa kembali No tujuan.
+**Pending**
+Mhn tunggu trx sblmnya selesai: T#762221212 R#999 T5.08980204060 @18:46, status Menunggu Jawaban.
+**No Data**
+TIDAK ADA transaksi Tujuan 08980204060 pada tgl 22/04/2025. Tidak ada data.
+## Catatan Penting
+* `refID` **harus unik** untuk setiap transaksi
+* Simpan log request & callback untuk keperluan audit
+* Gunakan IP yang sudah di-whitelist oleh OkeConnect
+* Selalu gunakan HTTPS
+## Penutup
+Dokumentasi ini disusun untuk memudahkan integrasi API H2H OkeConnect ke dalam sistem PPOB, website, maupun aplikasi backend Anda.
