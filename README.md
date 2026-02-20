@@ -87,12 +87,6 @@ try {
         echo "Gagal: " . $response->failureReason;
     }
 
-    if ($response->balanceBefore !== null) {
-        echo "Saldo Sebelum: " . $response->balanceBefore;
-        echo "Harga: " . $response->price;
-        echo "Saldo Setelah: " . $response->balanceAfter;
-    }
-
 } catch (OkeConnectException $e) {
     echo "Error: " . $e->getUserMessage();
 }
@@ -376,9 +370,6 @@ try {
 | productCode | string|null | Kode Produk |
 | destination | string|null | Nomor Tujuan |
 | status | string|null | Status |
-| balanceBefore | float|null | Saldo Sebelum |
-| price | float|null | Harga |
-| balanceAfter | float|null | Saldo Setelah |
 | time | string|null | Waktu |
 | serialNumber | string|null | Serial Number |
 | failureReason | string|null | Alasan Gagal |
@@ -432,9 +423,6 @@ try {
 | destination | string|null | Nomor Tujuan |
 | status | string|null | Status |
 | serialNumber | string|null | Serial Number |
-| balanceBefore | float|null | Saldo Sebelum |
-| price | float|null | Harga |
-| balanceAfter | float|null | Saldo Setelah |
 | date | string|null | Tanggal |
 | time | string|null | Waktu |
 | failureReason | string|null | Alasan Gagal |

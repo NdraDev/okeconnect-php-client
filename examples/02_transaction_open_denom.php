@@ -25,12 +25,6 @@ try {
         echo "Failure Reason: " . $response->failureReason . PHP_EOL;
     }
 
-    if ($response->balanceBefore !== null) {
-        echo "Saldo Sebelum: Rp " . number_format($response->balanceBefore, 0, ',', '.') . PHP_EOL;
-        echo "Harga: Rp " . number_format($response->price, 0, ',', '.') . PHP_EOL;
-        echo "Saldo Setelah: Rp " . number_format($response->balanceAfter, 0, ',', '.') . PHP_EOL;
-    }
-
 } catch (OkeConnectException $e) {
     echo "Error: " . $e->getUserMessage() . PHP_EOL;
     

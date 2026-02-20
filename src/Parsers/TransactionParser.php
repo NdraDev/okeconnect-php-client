@@ -43,7 +43,6 @@ class TransactionParser
         $this->extractRefId($response, $model);
         $this->extractProviderAndNominal($response, $model);
         $this->extractProductCodeAndDestination($response, $model);
-        $this->extractBalanceInfo($response, $model);
         $this->extractTime($response, $model);
         $this->extractOpenDenomInfo($response, $model);
     }
@@ -60,7 +59,6 @@ class TransactionParser
         $this->parseProcessing($response, $model);
         $model->status = 'FAILED';
         $this->extractFailureReason($response, $model);
-        $this->extractBalanceOnFailed($response, $model);
     }
 
     private function parseUnknown(string $response, TransactionResponse $model): void
@@ -114,22 +112,6 @@ class TransactionParser
 
         if (preg_match('/H2H\s+([A-Z]+)\s+Topup\s+\(Bebas\s+Nominal\)/i', $response, $matches)) {
             $model->provider = trim($matches[1]);
-        }
-    }
-
-    private function extractBalanceInfo(string $response, TransactionResponse $model): void
-    {
-        if (preg_match('/Saldo\s+([\d\.]+)\s*[–-]\s*([\d\.]+)\s*=\s*([\d\.]+)/', $response, $matches)) {
-            $model->balanceBefore = (float) str_replace('.', '', $matches[1]);
-            $model->price = (float) str_replace('.', '', $matches[2]);
-            $model->balanceAfter = (float) str_replace('.', '', $matches[3]);
-        }
-    }
-
-    private function extractBalanceOnFailed(string $response, TransactionResponse $model): void
-    {
-        if (preg_match('/Saldo\s+([\d\.]+)\s+@/', $response, $matches)) {
-            $model->balanceBefore = (float) str_replace('.', '', $matches[1]);
         }
     }
 

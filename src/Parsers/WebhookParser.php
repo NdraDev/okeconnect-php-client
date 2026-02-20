@@ -53,7 +53,6 @@ class WebhookParser
         $this->extractProviderAndNominal($message, $model);
         $this->extractProductCodeAndDestination($message, $model);
         $this->extractSerialNumber($message, $model);
-        $this->extractBalanceInfo($message, $model);
         $this->extractDateTime($message, $model);
     }
 
@@ -66,7 +65,6 @@ class WebhookParser
         $this->extractProviderAndNominal($message, $model);
         $this->extractProductCodeAndDestination($message, $model);
         $this->extractFailureReason($message, $model);
-        $this->extractBalanceOnFailed($message, $model);
         $this->extractTime($message, $model);
     }
 
@@ -111,22 +109,6 @@ class WebhookParser
             $model->serialNumber = trim($matches[1]);
         } elseif (preg_match('/SN:\s*([A-Z0-9\.]+)/i', $message, $matches)) {
             $model->serialNumber = $matches[1];
-        }
-    }
-
-    private function extractBalanceInfo(string $message, WebhookCallback $model): void
-    {
-        if (preg_match('/Saldo\s+([\d\.]+)\s*[–-]\s*([\d\.]+)\s*=\s*([\d\.]+)/', $message, $matches)) {
-            $model->balanceBefore = (float) str_replace('.', '', $matches[1]);
-            $model->price = (float) str_replace('.', '', $matches[2]);
-            $model->balanceAfter = (float) str_replace('.', '', $matches[3]);
-        }
-    }
-
-    private function extractBalanceOnFailed(string $message, WebhookCallback $model): void
-    {
-        if (preg_match('/Saldo\s+([\d\.]+)\s+@/', $message, $matches)) {
-            $model->balanceBefore = (float) str_replace('.', '', $matches[1]);
         }
     }
 

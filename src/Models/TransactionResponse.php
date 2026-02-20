@@ -12,9 +12,6 @@ class TransactionResponse
     public ?string $destination = null;
     public ?string $status = null;
     public ?string $message = null;
-    public ?float $balanceBefore = null;
-    public ?float $price = null;
-    public ?float $balanceAfter = null;
     public ?string $time = null;
     public ?string $serialNumber = null;
     public ?string $failureReason = null;
@@ -60,9 +57,6 @@ class TransactionResponse
             'destination' => $this->destination,
             'status' => $this->status,
             'status_text' => $this->getStatusText(),
-            'balance_before' => $this->balanceBefore,
-            'price' => $this->price,
-            'balance_after' => $this->balanceAfter,
             'time' => $this->time,
             'serial_number' => $this->serialNumber,
             'failure_reason' => $this->failureReason,

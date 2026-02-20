@@ -33,12 +33,6 @@ try {
         echo "Failure Reason: " . $callback->failureReason . PHP_EOL;
     }
 
-    if ($callback->balanceBefore !== null) {
-        echo "Saldo Sebelum: Rp " . number_format($callback->balanceBefore, 0, ',', '.') . PHP_EOL;
-        echo "Harga: Rp " . number_format($callback->price, 0, ',', '.') . PHP_EOL;
-        echo "Saldo Setelah: Rp " . number_format($callback->balanceAfter, 0, ',', '.') . PHP_EOL;
-    }
-
 } catch (OkeConnectException $e) {
     echo "Error: " . $e->getUserMessage() . PHP_EOL;
 }
